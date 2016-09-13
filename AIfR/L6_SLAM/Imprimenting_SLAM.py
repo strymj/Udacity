@@ -504,11 +504,95 @@ def print_result(N, num_landmarks, result):
 ############## ENTER YOUR CODE BELOW HERE ###################
 
 def slam(data, N, num_landmarks, motion_noise, measurement_noise):
-    #
-    #
-    # Add your code here!
-    #
-    #
+   
+
+    OmegaX = matrix([[1]])
+    Xi = matrix([[50]])   # initial X pose
+    OmegaY = matrix([[1]])
+    Yi = matrix([[50]])   # initial Y pose
+
+
+    OmegaX = OmegaX.expand(num_landmarks+1, num_landmarks+1, [0], [0])
+    Xi = Xi.expand(num_landmarks+1, 1, [0], [0])
+    OmegaY = OmegaY.expand(num_landmarks+1, num_landmarks+1, [0], [0])
+    Yi = Yi.expand(num_landmarks+1, 1, [0], [0])
+
+
+    for i in range(len(data)):
+
+        matrix_size = num_landmarks+i+2
+        
+        # array for expand
+        expa = []
+        for j in range(matrix_size):
+            if not j == i+1:
+                expa.append(j)
+        #print "expa : ", expa
+
+        # expand Omega and Xi Yi
+        OmegaX = OmegaX.expand(matrix_size, matrix_size, expa, expa)
+        Xi = Xi.expand(matrix_size, 1, expa, [0])
+        OmegaY = OmegaY.expand(matrix_size, matrix_size, expa, expa)
+        Yi = Yi.expand(matrix_size, 1, expa, [0])
+        
+
+        # add sense relation
+        r_col = i + 1                             # robot col(low)
+        #print "r_col : ", r_col
+
+
+        for k in range(len(data[i][0])):
+
+            l_col = r_col + data[i][0][k][0] +1   # landmark col(low)
+
+            OmegaX.value[r_col][r_col] +=  1 / measurement_noise
+            OmegaX.value[l_col][l_col] +=  1 / measurement_noise
+            OmegaX.value[r_col][l_col] += -1 / measurement_noise
+            OmegaX.value[l_col][r_col] += -1 / measurement_noise
+            Xi.value[r_col][0]         -= data[i][0][k][1] / measurement_noise
+            Xi.value[l_col][0]         += data[i][0][k][1] / measurement_noise
+
+            OmegaY.value[r_col][r_col] +=  1 / measurement_noise
+            OmegaY.value[l_col][l_col] +=  1 / measurement_noise
+            OmegaY.value[r_col][l_col] += -1 / measurement_noise
+            OmegaY.value[l_col][r_col] += -1 / measurement_noise
+            Yi.value[r_col][0]         -= data[i][0][k][2] / measurement_noise
+            Yi.value[l_col][0]         += data[i][0][k][2] / measurement_noise
+
+
+        # add move relation
+        OmegaX.value[r_col-1][r_col-1] +=  1 / motion_noise
+        OmegaX.value[r_col][r_col]     +=  1 / motion_noise
+        OmegaX.value[r_col-1][r_col]   += -1 / motion_noise
+        OmegaX.value[r_col][r_col-1]   += -1 / motion_noise
+        Xi.value[r_col-1][0]           -= data[i][1][0] / motion_noise
+        Xi.value[r_col][0]             += data[i][1][0] / motion_noise
+
+        OmegaY.value[r_col-1][r_col-1] +=  1 / motion_noise
+        OmegaY.value[r_col][r_col]     +=  1 / motion_noise
+        OmegaY.value[r_col-1][r_col]   += -1 / motion_noise
+        OmegaY.value[r_col][r_col-1]   += -1 / motion_noise
+        Yi.value[r_col-1][0]           -= data[i][1][1] / motion_noise
+        Yi.value[r_col][0]             += data[i][1][1] / motion_noise
+
+        
+        #OmegaX.show("OmegaX : ")
+        #Xi.show("Xi : ")
+        #OmegaY.show("OmegaY : ")
+        #Yi.show("Yi : ")
+    
+
+    muX = OmegaX.inverse() * Xi
+    muY = OmegaY.inverse() * Yi
+
+
+    mu = matrix([[0]])
+    mu = mu.expand(matrix_size*2, 1, [0], [0])
+    for l in range(len(muX.value)):
+        mu.value[l*2] = muX.value[l]
+        mu.value[l*2+1] = muY.value[l]
+    print mu
+
     return mu # Make sure you return mu for grading!
         
 ############### ENTER YOUR CODE ABOVE HERE ###################
@@ -529,9 +613,9 @@ motion_noise       = 2.0      # noise in robot motion
 measurement_noise  = 2.0      # noise in the measurements
 distance           = 20.0     # distance by which robot (intends to) move each iteratation 
 
-data = make_data(N, num_landmarks, world_size, measurement_range, motion_noise, measurement_noise, distance)
-result = slam(data, N, num_landmarks, motion_noise, measurement_noise)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-print_result(N, num_landmarks, result)
+#data = make_data(N, num_landmarks, world_size, measurement_range, motion_noise, measurement_noise, distance)
+#result = slam(data, N, num_landmarks, motion_noise, measurement_noise) 
+#print_result(N, num_landmarks, result)
 
 # -------------
 # Testing
@@ -715,8 +799,8 @@ test_data2 = [[[[0, 26.543274387283322, -6.262538160312672], [3, 9.9373968257997
 
 ### Uncomment the following three lines for test case 1 ###
 
-#result = slam(test_data1, 20, 5, 2.0, 2.0)
-#print_result(20, 5, result)
+result = slam(test_data1, 20, 5, 2.0, 2.0)
+print_result(20, 5, result)
 #print result
 
 
