@@ -509,8 +509,8 @@ def slam(data, N, num_landmarks, motion_noise, measurement_noise):
     # initialize Omega and Xi
     OmegaX = matrix([[1]])
     OmegaY = matrix([[1]])
-    XiX = matrix([[50]])   # center of the world
-    XiY = matrix([[50]])   # center of the world
+    XiX = matrix([[world_size/2]])   # center of the world
+    XiY = matrix([[world_size/2]])   # center of the world
     
     OmegaX = OmegaX.expand(num_landmarks+1, num_landmarks+1,[0], [0])
     OmegaY = OmegaY.expand(num_landmarks+1, num_landmarks+1,[0], [0])
@@ -585,10 +585,10 @@ def slam(data, N, num_landmarks, motion_noise, measurement_noise):
         mu.value[l*2+1] = muY.value[l]
 
 
-    OmegaX.show("OmegaX")
-    OmegaY.show("OmegaY")
-    XiX.show("XiX")
-    XiY.show("XiY")
+    #OmegaX.show("OmegaX")
+    #OmegaY.show("OmegaY")
+    #XiX.show("XiX")
+    #XiY.show("XiY")
 
     
     return mu # Make sure you return mu for grading!
